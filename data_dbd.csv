@@ -1,0 +1,176 @@
+tahun_data,kab_kota,jumlah,jumlah_meninggal
+2019,Kab.Cilacap,476,9
+2019,Kab.Banyumas,202,12
+2019,Kab.Purbalingga,502,6
+2019,Kab.Banjarnegara,277,0
+2019,Kab.Kebumen,259,1
+2019,Kab.Purworejo,82,1
+2019,Kab.Wonosobo,78,0
+2019,Kab.Magelang,215,2
+2019,Kab.Boyolali,413,1
+2019,Kab.Klaten,298,5
+2019,Kab.Sukoharjo,315,10
+2019,Kab.Wonogiri,59,2
+2019,Kab.Karanganyar,838,7
+2019,Kab.Sragen,122,0
+2019,Kab.Grobogan,79,5
+2019,Kab.Blora,311,7
+2019,Kab.Rembang,95,3
+2019,Kab.Pati,346,2
+2019,Kab.Kudus,186,15
+2019,Kab.Jepara,365,4
+2019,Kab.Demak,157,0
+2019,Kab.Semarang,457,2
+2019,Kab.Temanggung,401,2
+2019,Kab.Kendal,185,1
+2019,Kab.Batang,359,3
+2019,Kab.Pekalongan,232,0
+2019,Kab.Pemalang,79,0
+2019,Kab.Tegal,351,3
+2019,Kab.Brebes,405,12
+2019,Kota Magelang,75,2
+2019,Kota Surakarta,153,1
+2019,Kota Salatiga,44,1
+2019,Kota Semarang,440,14
+2019,Kota Pekalongan,57,1
+2019,Kota Tegal,94,0
+2020,Kab.Cilacap,501,5
+2020,Kab.Banyumas,378,12
+2020,Kab.Purbalingga,200,4
+2020,Kab.Banjarnegara,179,4
+2020,Kab.Kebumen,157,4
+2020,Kab.Purworejo,134,0
+2020,Kab.Wonosobo,106,2
+2020,Kab.Magelang,142,3
+2020,Kab.Boyolali,118,2
+2020,Kab.Klaten,371,7
+2020,Kab.Sukoharjo,185,7
+2020,Kab.Wonogiri,27,0
+2020,Kab.Karanganyar,95,1
+2020,Kab.Sragen,64,2
+2020,Kab.Grobogan,136,7
+2020,Kab.Blora,113,2
+2020,Kab.Rembang,57,1
+2020,Kab.Pati,185,3
+2020,Kab.Kudus,40,5
+2020,Kab.Jepara,164,1
+2020,Kab.Demak,107,0
+2020,Kab.Semarang,167,2
+2020,Kab.Temanggung,68,2
+2020,Kab.Kendal,197,0
+2020,Kab.Batang,266,4
+2020,Kab.Pekalongan,246,0
+2020,Kab.Pemalang,40,0
+2020,Kab.Tegal,371,4
+2020,Kab.Brebes,282,8
+2020,Kota Magelang,21,0
+2020,Kota Surakarta,73,3
+2020,Kota Salatiga,24,0
+2020,Kota Semarang,320,4
+2020,Kota Pekalongan,85,6
+2020,Kota Tegal,59,2
+2021,Kab.Cilacap,501,5
+2021,Kab.Banyumas,378,12
+2021,Kab.Purbalingga,200,4
+2021,Kab.Banjarnegara,179,4
+2021,Kab.Kebumen,157,4
+2021,Kab.Purworejo,134,0
+2021,Kab.Wonosobo,106,2
+2021,Kab.Magelang,142,3
+2021,Kab.Boyolali,118,2
+2021,Kab.Klaten,371,7
+2021,Kab.Sukoharjo,185,7
+2021,Kab.Wonogiri,27,0
+2021,Kab.Karanganyar,95,1
+2021,Kab.Sragen,64,2
+2021,Kab.Grobogan,136,7
+2021,Kab.Blora,113,2
+2021,Kab.Rembang,57,1
+2021,Kab.Pati,185,3
+2021,Kab.Kudus,40,5
+2021,Kab.Jepara,164,1
+2021,Kab.Demak,107,0
+2021,Kab.Semarang,167,2
+2021,Kab.Temanggung,68,2
+2021,Kab.Kendal,197,0
+2021,Kab.Batang,266,4
+2021,Kab.Pekalongan,246,0
+2021,Kab.Pemalang,40,0
+2021,Kab.Tegal,371,4
+2021,Kab.Brebes,282,8
+2021,Kota Magelang,21,0
+2021,Kota Surakarta,73,3
+2021,Kota Salatiga,24,0
+2021,Kota Semarang,320,4
+2021,Kota Pekalongan,85,6
+2021,Kota Tegal,59,2
+2022,Kab.Cilacap,902,19
+2022,Kab.Banyumas,307,13
+2022,Kab.Purbalingga,276,4
+2022,Kab.Banjarnegara,474,1
+2022,Kab.Kebumen,156,2
+2022,Kab.Purworejo,131,1
+2022,Kab.Wonosobo,69,2
+2022,Kab.Magelang,313,9
+2022,Kab.Boyolali,297,4
+2022,Kab.Klaten,540,24
+2022,Kab.Sukoharjo,643,7
+2022,Kab.Wonogiri,109,3
+2022,Kab.Karanganyar,345,8
+2022,Kab.Sragen,187,0
+2022,Kab.Grobogan,1275,14
+2022,Kab.Blora,589,15
+2022,Kab.Rembang,201,3
+2022,Kab.Pati,911,8
+2022,Kab.Kudus,553,8
+2022,Kab.Jepara,221,3
+2022,Kab.Demak,305,3
+2022,Kab.Semarang,90,0
+2022,Kab.Temanggung,29,0
+2022,Kab.Kendal,457,29
+2022,Kab.Batang,372,8
+2022,Kab.Pekalongan,663,5
+2022,Kab.Pemalang,114,5
+2022,Kab.Tegal,499,10
+2022,Kab.Brebes,66,0
+2022,Kota Magelang,62,1
+2022,Kota Surakarta,166,7
+2022,Kota Salatiga,56,1
+2022,Kota Semarang,865,33
+2022,Kota Pekalongan,126,2
+2022,Kota Tegal,107,8
+2023,Kab.Cilacap,104,5
+2023,Kab.Banyumas,273,4
+2023,Kab.Purbalingga,111,2
+2023,Kab.Banjarnegara,163,0
+2023,Kab.Kebumen,83,0
+2023,Kab.Purworejo,23,0
+2023,Kab.Wonosobo,49,0
+2023,Kab.Magelang,148,1
+2023,Kab.Boyolali,442,5
+2023,Kab.Klaten,308,14
+2023,Kab.Sukoharjo,233,1
+2023,Kab.Wonogiri,31,0
+2023,Kab.Karanganyar,101,1
+2023,Kab.Sragen,123,0
+2023,Kab.Grobogan,339,12
+2023,Kab.Blora,266,12
+2023,Kab.Rembang,186,6
+2023,Kab.Pati,463,4
+2023,Kab.Kudus,385,2
+2023,Kab.Jepara,124,5
+2023,Kab.Demak,285,2
+2023,Kab.Semarang,155,0
+2023,Kab.Temanggung,17,0
+2023,Kab.Kendal,375,29
+2023,Kab.Batang,192,4
+2023,Kab.Pekalongan,404,0
+2023,Kab.Pemalang,51,1
+2023,Kab.Tegal,401,1
+2023,Kab.Brebes,129,6
+2023,Kota Magelang,44,0
+2023,Kota Surakarta,99,4
+2023,Kota Salatiga,28,1
+2023,Kota Semarang,404,16
+2023,Kota Pekalongan,69,3
+2023,Kota Tegal,48,2
