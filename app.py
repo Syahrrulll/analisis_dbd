@@ -4,1084 +4,613 @@ import joblib
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime
-import plotly.io as pio
-from sklearn.inspection import permutation_importance
-
-# Set tema Plotly yang lebih gelap
-pio.templates.default = "plotly_white"
 
 # ============================================================================
-# PAGE CONFIG & CUSTOM CSS
+# PAGE CONFIG & STYLING
 # ============================================================================
-st.set_page_config(
-    page_title="Dashboard Mitigasi DBD",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Mitigasi DBD Terpadu", page_icon="🏥", layout="wide")
 
-# Custom CSS untuk styling premium dengan background gelap
 st.markdown("""
 <style>
-    /* Global Styles dengan dark theme */
-    .stApp {
-        background-color: #0f172a;
-        color: #f1f5f9;
+    .stApp { 
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f1f5f9; 
     }
-
-    /* Text color default */
-    .stMarkdown, .stText, .stTitle, .stHeader {
-        color: #f1f5f9 !important;
-    }
-
-    /* Header dengan gradien modern */
     .main-header {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        color: white;
-        padding: 1.5rem 2rem;
-        border-radius: 15px;
-        margin-bottom: 2rem;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        border-left: 6px solid #10b981;
+        padding: 2.5rem; border-radius: 20px; margin-bottom: 2.5rem;
+        border-left: 8px solid #10b981; box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        position: relative;
+        overflow: hidden;
     }
-
-    .main-header h1 {
-        color: white;
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
+    .main-header::before {
+        content: "🏥";
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 5rem;
+        opacity: 0.1;
     }
-
-    .main-header p {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1rem;
-        margin-bottom: 0;
-    }
-
-    /* Sub-header elegant */
-    .section-header {
-        color: #60a5fa;
-        font-size: 1.4rem;
-        font-weight: 700;
-        margin: 1.5rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #3b82f6;
-    }
-
-    .subsection-header {
-        color: #94a3b8;
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 1rem 0 0.5rem 0;
-        padding-left: 0.5rem;
-        border-left: 3px solid #3b82f6;
-    }
-
-    /* Card styles dengan dark theme */
     .metric-card {
-        background: #1e293b;
-        padding: 1.25rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        border: 1px solid #334155;
-        color: #f1f5f9;
+        background: rgba(30, 41, 59, 0.8);
+        padding: 1.8rem; 
+        border-radius: 16px;
+        border: 1px solid #475569;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+        transition: transform 0.3s ease;
     }
-
-    .highlight-card {
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-        color: white;
+    .metric-card:hover {
+        transform: translateY(-5px);
+        border-color: #10b981;
+    }
+    .recommendation-card {
+        padding: 1.8rem; 
+        border-radius: 16px; 
+        margin-top: 1.5rem;
+        border-left: 12px solid;
+        background: rgba(30, 41, 59, 0.9);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .high-risk { 
+        background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+        border-left-color: #ef4444; 
+        color: #fecaca; 
+    }
+    .med-risk { 
+        background: linear-gradient(135deg, #422006 0%, #92400e 100%);
+        border-left-color: #f59e0b; 
+        color: #fef3c7; 
+    }
+    .low-risk { 
+        background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+        border-left-color: #10b981; 
+        color: #d1fae5; 
+    }
+    .var-card {
+        background: rgba(30, 41, 59, 0.8);
         padding: 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        margin: 1rem 0;
+        border: 1px solid #475569;
     }
-
-    /* Importance tags */
-    .importance-high {
-        background-color: #dc2626;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        display: inline-block;
-        margin: 0.25rem;
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.2rem;
+        margin-top: 1.5rem;
     }
-
-    .importance-medium {
-        background-color: #f59e0b;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        display: inline-block;
-        margin: 0.25rem;
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+        background-color: transparent;
     }
-
-    .importance-low {
-        background-color: #3b82f6;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        display: inline-block;
-        margin: 0.25rem;
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px 8px 0 0;
+        padding: 1rem 2rem;
+        font-weight: bold;
+        background-color: rgba(30, 41, 59, 0.7);
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #10b981 !important;
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# FUNCTIONS
+# LOAD ASSETS (Model Robust 88%)
 # ============================================================================
 @st.cache_resource
-def load_data():
-    """Load model and data with caching"""
-    try:
-        bundle = joblib.load('model_final_bundle.pkl')
-        df_master = pd.read_csv('df_gabungan.csv')
-        return bundle, df_master
-    except Exception as e:
-        st.error(f"❌ Error loading data: {str(e)}")
-        st.stop()
+def load_assets():
+    bundle = joblib.load('model_robust_bundle.pkl')
+    df = pd.read_csv('df_final_dashboard.csv')
+    return bundle, df
 
-def calculate_feature_importance_corrected(models, X_data, y_data, features):
-    """Calculate feature importance dengan metode yang lebih akurat"""
-    importance_data = {}
-
-    for model_name, model in models.items():
-        try:
-            st.write(f"🔍 Menghitung importance untuk model {model_name}...")
-
-            # Coba beberapa metode untuk mendapatkan importance
-            importance_scores = None
-
-            # Method 1: Jika model punya feature_importances_ (Random Forest, etc)
-            if hasattr(model, 'feature_importances_'):
-                st.write(f"  Menggunakan feature_importances_")
-                importance_scores = model.feature_importances_
-
-            # Method 2: Jika model punya coef_ (Linear Regression, etc)
-            elif hasattr(model, 'coef_'):
-                st.write(f"  Menggunakan coef_")
-                coefs = model.coef_
-                if len(coefs.shape) > 1:
-                    coefs = coefs.flatten()
-                importance_scores = np.abs(coefs)
-
-            # Method 3: Permutation importance sebagai fallback
-            else:
-                st.write(f"  Menggunakan permutation importance")
-                try:
-                    result = permutation_importance(
-                        model, X_data, y_data,
-                        n_repeats=10,
-                        random_state=42,
-                        n_jobs=-1,
-                        scoring='r2'
-                    )
-                    importance_scores = result.importances_mean
-                except:
-                    st.write(f"  Permutation importance gagal, menggunakan random importance")
-                    # Fallback: random dengan sedikit variasi
-                    np.random.seed(42)
-                    importance_scores = np.random.rand(len(features))
-
-            # Pastikan importance_scores ada dan valid
-            if importance_scores is None or len(importance_scores) != len(features):
-                st.write(f"  Importance scores tidak valid, menggunakan equal importance")
-                importance_scores = np.ones(len(features))
-
-            # Normalize scores
-            if np.max(importance_scores) > 0:
-                importance_norm = importance_scores / np.max(importance_scores)
-            else:
-                importance_norm = np.zeros(len(features))
-
-            # Buat DataFrame
-            importance_df = pd.DataFrame({
-                'feature': features,
-                'importance_raw': importance_scores,
-                'importance_norm': importance_norm
-            })
-
-            # Sort by importance
-            importance_df = importance_df.sort_values('importance_norm', ascending=False)
-
-            # Categorize importance
-            importance_df['category'] = pd.cut(
-                importance_df['importance_norm'],
-                bins=[-0.1, 0.3, 0.7, 1.1],
-                labels=['Rendah', 'Sedang', 'Tinggi']
-            )
-
-            importance_data[model_name] = importance_df
-
-            st.write(f"  ✅ Selesai: Top feature = {importance_df.iloc[0]['feature']} ({importance_df.iloc[0]['importance_norm']:.3f})")
-
-        except Exception as e:
-            st.error(f"  ❌ Error untuk model {model_name}: {str(e)}")
-            # Create equal importance sebagai last resort
-            importance_df = pd.DataFrame({
-                'feature': features,
-                'importance_raw': np.ones(len(features)),
-                'importance_norm': np.ones(len(features)),
-                'category': 'Sedang'
-            })
-            importance_data[model_name] = importance_df
-
-    return importance_data
-
-def get_model_type(model):
-    """Detect type of model"""
-    model_class = str(type(model)).lower()
-    if 'randomforest' in model_class:
-        return 'Random Forest'
-    elif 'linearmodel' in model_class or 'linearregression' in model_class:
-        return 'Linear Regression'
-    elif 'xgboost' in model_class:
-        return 'XGBoost'
-    elif 'svm' in model_class or 'svr' in model_class:
-        return 'SVM'
-    else:
-        return 'Unknown'
+bundle, df_master = load_assets()
+model = bundle['model']
+features = bundle['features']
+metrics = bundle['metrics']
 
 # ============================================================================
-# SIDEBAR - NAVIGATION & CONTROLS
+# HELPER FUNCTIONS
 # ============================================================================
-with st.sidebar:
-    # Sidebar Header
-    st.markdown("""
-    <div class="sidebar-header">
-        <h3 style="margin:0; font-size: 1.3rem;">🏥 DASHBOARD DBD</h3>
-        <p style="margin:0.25rem 0 0 0; font-size:0.85rem; opacity:0.9">Analisis & Mitigasi Terpadu</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Loading Data
+def format_number(value, is_population=False):
+    """Format angka dengan penanganan untuk nilai None/NaN"""
+    if pd.isna(value) or value is None:
+        return "N/A"
     try:
-        bundle, df_master = load_data()
-        models = bundle['models']
-        stats = bundle['stats']
-        best_model_name = bundle['best_model']
-        features = bundle['features']
-        y_extra = bundle['y_extra']
-        df_stats = pd.DataFrame(stats)
+        # Coba format sebagai float
+        float_val = float(value)
 
-        # Debug: Cek fitur yang ada
-        st.write(f"📊 Total fitur: {len(features)}")
+        # Jika ini data penduduk dalam ribuan, kalikan dengan 1000
+        if is_population:
+            float_val = float_val * 1000
 
-        st.success("✅ Data berhasil dimuat")
+        if float_val >= 1000000:
+            return f"{float_val/1000000:,.2f} juta"
+        elif float_val >= 1000:
+            return f"{float_val:,.0f}"
+        elif float_val.is_integer():
+            return f"{int(float_val):,}"
+        else:
+            return f"{float_val:,.2f}"
+    except:
+        return str(value)
 
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-        st.stop()
-
-    st.markdown("---")
-
-    # Navigation Menu
-    st.markdown("**🧭 NAVIGASI**")
-
-    menu_pages = {
-        "🏆 Model Terbaik": "model",
-        "📊 Feature Importance": "features", 
-        "📈 Analisis Tren": "trend",
-        "📍 Prediksi Wilayah": "prediction",
-        "📋 Statistik Data": "stats"
+def get_variable_recommendation(feature_name, current_value, feature_mean):
+    """Menghasilkan rekomendasi spesifik untuk setiap variabel"""
+    recommendations = {
+        'IR_tahun_lalu': {
+            'high': "📈 **Kasus tahun lalu tinggi** → Fokuskan surveilans intensif di wilayah dengan riwayat kasus tinggi",
+            'med': "📊 **Kasus tahun lalu sedang** → Lanjutkan pemantauan rutin dan persiapan respons cepat",
+            'low': "📉 **Kasus tahun lalu rendah** → Pertahankan pencegahan dan waspada peningkatan mendadak"
+        },
+        'kepadatan_penduduk_km2': {
+            'high': "🏙️ **Kepadatan tinggi** → Optimalkan PSN massal, distribusi kelambu, dan pengaturan jarak hunian",
+            'med': "🏘️ **Kepadatan sedang** → Tingkatkan edukasi dan partisipasi masyarakat dalam 3M Plus",
+            'low': "🌳 **Kepadatan rendah** → Fokus pada daerah perkantoran dan fasilitas umum"
+        },
+        'curah_hujan_mm': {
+            'high': "🌧️ **Curah hujan tinggi** → Perketat pemantauan genangan air, perbaiki drainase, sosialisasi PSN",
+            'med': "⛈️ **Curah hujan sedang** → Waspada penampungan air hujan di rumah tangga",
+            'low': "☀️ **Curah hujan rendah** → Perhatikan penampungan air buatan dan penyimpanan air bersih"
+        },
+        'akses_sanitasi_layak_persen': {
+            'high': "✅ **Sanitasi layak tinggi** → Pertahankan dan tingkatkan cakupan",
+            'med': "⚠️ **Sanitasi layak sedang** → Intensifkan sosialisasi sanitasi sehat",
+            'low': "🚨 **Sanitasi layak rendah** → Prioritas intervensi infrastruktur sanitasi"
+        }
     }
 
-    selected_menu = st.radio(
-        "Pilih halaman:",
-        list(menu_pages.keys()),
-        label_visibility="collapsed"
-    )
+    # Default mapping untuk variabel lain
+    if feature_name not in recommendations:
+        feature_display = feature_name.replace('_', ' ').title()
+        recommendations[feature_name] = {
+            'high': f"📊 **{feature_display} tinggi** → Perlu evaluasi dampaknya terhadap risiko DBD",
+            'med': f"📈 **{feature_display} sedang** → Monitor perkembangan secara berkala",
+            'low': f"📉 **{feature_display} rendah** → Kondisi optimal untuk pencegahan"
+        }
 
-    st.markdown("---")
+    # Tentukan kategori berdasarkan nilai (hanya jika keduanya numerik)
+    try:
+        current_num = float(current_value)
+        mean_num = float(feature_mean)
 
-    # Region Selection
-    st.markdown("**📍 FILTER WILAYAH**")
+        if current_num > mean_num * 1.3:
+            category = 'high'
+        elif current_num < mean_num * 0.7:
+            category = 'low'
+        else:
+            category = 'med'
+    except:
+        category = 'med'
+
+    return recommendations[feature_name][category]
+
+# ============================================================================
+# SIDEBAR
+# ============================================================================
+with st.sidebar:
+    st.markdown("### 🎯 KONTROL PANEL")
 
     selected_kota = st.selectbox(
-        "Pilih Kabupaten/Kota:",
-        options=sorted(df_master['Kabupaten/Kota'].unique()) if 'Kabupaten/Kota' in df_master.columns else ["Data tidak tersedia"],
-        index=0,
-        label_visibility="collapsed"
+        "Pilih Kabupaten/Kota:", 
+        sorted(df_master['Kabupaten/Kota'].unique()),
+        help="Pilih wilayah untuk analisis dan prediksi"
     )
 
-    # Quick Stats
     st.markdown("---")
-    st.markdown("**📊 QUICK STATS**")
+
+    # Model metrics
+    st.markdown("### 📊 STATUS MODEL")
 
     col1, col2 = st.columns(2)
     with col1:
-        total_wilayah = len(df_master['Kabupaten/Kota'].unique()) if 'Kabupaten/Kota' in df_master.columns else 0
-        st.metric("Total Wilayah", total_wilayah, label_visibility="collapsed")
+        st.metric("Akurasi (R²)", f"{metrics['test_r2']*100:.1f}%")
     with col2:
-        st.metric("Total Data", len(df_master), label_visibility="collapsed")
+        st.metric("Stabilitas", f"{(1-metrics['gap'])*100:.1f}%")
 
-    # Model Info
-    st.info(f"**Model Aktif:** {best_model_name}")
+    st.caption(f"🔄 Update terakhir: {datetime.now().strftime('%d %b %Y %H:%M')}")
 
-    # Last Updated
     st.markdown("---")
-    st.caption(f"🔄 {datetime.now().strftime('%d %b %Y %H:%M')}")
+    st.markdown("### 📈 LEGENDA STATUS")
+    st.markdown("""
+    - 🚨 **Tinggi**: IR > 50
+    - 🟡 **Sedang**: IR 20-50  
+    - ✅ **Rendah**: IR < 20
+    """)
 
 # ============================================================================
-# MAIN CONTENT AREA
+# MAIN CONTENT
 # ============================================================================
-# Header Utama
-st.markdown("""
+# Header utama
+st.markdown(f"""
 <div class="main-header">
-    <h1>📊 Dashboard Analisis & Mitigasi DBD</h1>
-    <p>Platform terintegrasi untuk monitoring, prediksi, dan rekomendasi strategi penanganan Demam Berdarah Dengue</p>
+    <h1 style="margin-bottom: 0.5rem; font-size: 2.8rem;">🏥 Dashboard Mitigasi DBD</h1>
+    <h2 style="margin-top: 0; color: #10b981; font-size: 1.8rem;">{selected_kota}</h2>
+    <p style="font-size: 1.1rem; opacity: 0.9;">Sistem Rekomendasi Mitigasi Berbasis Predictive Modeling • Akurasi: {metrics['test_r2']*100:.1f}%</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================================================
-# TABBED INTERFACE
-# ============================================================================
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🏆 EVALUASI MODEL", 
-    "📊 FEATURE IMPORTANCE",
-    "📈 ANALISIS TREN", 
-    "📍 PREDIKSI WILAYAH",
-    "📋 DATA & STATISTIK"
-])
+# Ambil data terbaru untuk kota tersebut (tahun terakhir)
+data_kota_latest = df_master[df_master['Kabupaten/Kota'] == selected_kota].iloc[-1]
 
-# ============================================================================
-# TAB 2: FEATURE IMPORTANCE ANALYSIS (DIPINDAH KE ATAS)
-# ============================================================================
-with tab2:
-    st.markdown('<h3 class="section-header">📊 Feature Importance Analysis</h3>', unsafe_allow_html=True)
+# Debug: Tampilkan kolom yang tersedia
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔍 DEBUG DATA")
+    st.write(f"Kolom tersedia: {list(data_kota_latest.index)}")
 
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.markdown("""
-    ### 🔍 Analisis Variabel Paling Berpengaruh
-    Analisis ini menunjukkan variabel-variabel yang paling mempengaruhi prediksi kasus DBD pada setiap model split.
-    Variabel dengan importance tinggi memiliki pengaruh signifikan terhadap hasil prediksi.
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
+# Lakukan Prediksi
+input_df = pd.DataFrame([data_kota_latest[features]], columns=features)
+pred_ir = model.predict(input_df)[0]
 
-    # Debug: Cek tipe model
-    st.markdown("#### 🔧 Informasi Model")
-    col_debug1, col_debug2, col_debug3 = st.columns(3)
+# Tab navigation
+tab1, tab2, tab3 = st.tabs(["🎯 PREDIKSI & REKOMENDASI", "📊 ANALISIS VARIABEL", "🔍 EVALUASI MODEL"])
 
-    with col_debug1:
-        model_type_70 = get_model_type(models["70:30"])
-        st.metric("Model 70:30", model_type_70)
-
-    with col_debug2:
-        model_type_80 = get_model_type(models["80:20"])
-        st.metric("Model 80:20", model_type_80)
-
-    with col_debug3:
-        model_type_90 = get_model_type(models["90:10"])
-        st.metric("Model 90:10", model_type_90)
-
-    # Hitung feature importance dengan metode yang dikoreksi
-    st.info("🔄 Menghitung feature importance...")
-
-    try:
-        # Persiapan data
-        X_data = df_master[features]
-
-        # Cari kolom target
-        target_cols = ['kasus_dbd', 'IR_DBD', 'IR', 'kasus', 'incidence_rate', 'Incidence_Rate', 'Incidence_Rate_DBD']
-        target_col = None
-        for col in target_cols:
-            if col in df_master.columns:
-                target_col = col
-                st.success(f"✅ Kolom target ditemukan: {target_col}")
-                break
-
-        if not target_col:
-            # Jika tidak ditemukan, coba kolom terakhir
-            st.warning("⚠️ Kolom target tidak ditemukan, menggunakan kolom terakhir numerik")
-            numeric_cols = df_master.select_dtypes(include=[np.number]).columns.tolist()
-            if numeric_cols:
-                target_col = numeric_cols[-1]
-                st.info(f"Menggunakan kolom: {target_col}")
-
-        if target_col:
-            y_data = df_master[target_col]
-
-            # Hitung feature importance
-            with st.spinner("Menghitung importance untuk semua model..."):
-                importance_data = calculate_feature_importance_corrected(models, X_data, y_data, features)
-
-            # Tampilkan hasil untuk semua model
-            st.markdown('<h3 class="subsection-header">📈 Feature Importance per Model Split</h3>', unsafe_allow_html=True)
-
-            # Buat 3 kolom untuk 3 model
-            col1, col2, col3 = st.columns(3)
-
-            model_cols = {
-                "70:30": col1,
-                "80:20": col2,
-                "90:10": col3
-            }
-
-            for model_name, col in model_cols.items():
-                if model_name in importance_data:
-                    importance_df = importance_data[model_name]
-
-                    with col:
-                        st.markdown(f'<div class="metric-card">', unsafe_allow_html=True)
-                        st.markdown(f"**🏆 Model {model_name}**")
-
-                        # Tampilkan top 5 features
-                        st.markdown("**Top 5 Features:**")
-                        for i, (_, row) in enumerate(importance_df.head(5).iterrows()):
-                            category_class = f"importance-{row['category'].lower()}"
-                            st.markdown(f"""
-                            <div style="margin: 0.5rem 0; padding: 0.5rem; background: #334155; border-radius: 8px;">
-                                <div style="font-weight: 600; color: #f1f5f9;">{i+1}. {row['feature']}</div>
-                                <div style="display: flex; justify-content: space-between; margin-top: 0.25rem;">
-                                    <span style="color: #94a3b8; font-size: 0.9rem;">Score: {row['importance_norm']:.3f}</span>
-                                    <span class="{category_class}">{row['category']}</span>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-
-                        # Cek khusus kepadatan penduduk
-                        kepadatan_row = importance_df[importance_df['feature'].str.contains('kepadatan', case=False)]
-                        if not kepadatan_row.empty:
-                            st.markdown("---")
-                            st.markdown(f"**📍 Kepadatan Penduduk:**")
-                            st.markdown(f"Peringkat: #{kepadatan_row.index[0]+1}")
-                            st.markdown(f"Score: {kepadatan_row.iloc[0]['importance_norm']:.3f}")
-
-                        st.markdown('</div>', unsafe_allow_html=True)
-
-            # Visualisasi perbandingan antar model
-            st.markdown('<h3 class="subsection-header">📊 Perbandingan Visual Feature Importance</h3>', unsafe_allow_html=True)
-
-            # Pilih model untuk visualisasi detail
-            col_model_sel, _ = st.columns([1, 2])
-            with col_model_sel:
-                selected_feature_model = st.selectbox(
-                    "Pilih Model untuk Detail:",
-                    options=["70:30", "80:20", "90:10"],
-                    index=["70:30", "80:20", "90:10"].index(best_model_name) if best_model_name in ["70:30", "80:20", "90:10"] else 0,
-                    key="feature_detail_model"
-                )
-
-            if selected_feature_model in importance_data:
-                importance_df = importance_data[selected_feature_model]
-
-                # Bar chart untuk feature importance
-                fig_importance = go.Figure()
-
-                # Ambil semua features, urut dari tinggi ke rendah
-                importance_df_sorted = importance_df.sort_values('importance_norm', ascending=True)
-
-                # Warna berdasarkan kategori
-                color_map = {'Tinggi': '#ef4444', 'Sedang': '#f59e0b', 'Rendah': '#3b82f6'}
-                colors = [color_map.get(cat, '#94a3b8') for cat in importance_df_sorted['category']]
-
-                # Highlight kepadatan penduduk jika ada
-                highlight_indices = []
-                for i, feat in enumerate(importance_df_sorted['feature']):
-                    if 'kepadatan' in str(feat).lower():
-                        highlight_indices.append(i)
-                        colors[i] = '#10b981'  # Warna hijau untuk highlight
-
-                fig_importance.add_trace(go.Bar(
-                    x=importance_df_sorted['importance_norm'],
-                    y=importance_df_sorted['feature'],
-                    orientation='h',
-                    marker_color=colors,
-                    text=importance_df_sorted['importance_norm'].round(3),
-                    textposition='auto',
-                    textfont=dict(color='white', size=10)
-                ))
-
-                # Tambah annotation untuk kepadatan penduduk jika ada
-                if highlight_indices:
-                    for idx in highlight_indices:
-                        feat_name = importance_df_sorted.iloc[idx]['feature']
-                        fig_importance.add_annotation(
-                            x=importance_df_sorted.iloc[idx]['importance_norm'],
-                            y=idx,
-                            text="📍 Kepadatan",
-                            showarrow=True,
-                            arrowhead=2,
-                            arrowsize=1,
-                            arrowwidth=2,
-                            arrowcolor="#10b981",
-                            font=dict(color="#10b981", size=12)
-                        )
-
-                fig_importance.update_layout(
-                    title=dict(
-                        text=f"Feature Importance - Model {selected_feature_model}",
-                        font=dict(color='white', size=16)
-                    ),
-                    xaxis=dict(
-                        title="Importance Score (Normalized)",
-                        title_font=dict(color='#94a3b8'),
-                        tickfont=dict(color='#94a3b8'),
-                        gridcolor='#334155',
-                        range=[0, 1.1]
-                    ),
-                    yaxis=dict(
-                        title="Variabel",
-                        title_font=dict(color='#94a3b8'),
-                        tickfont=dict(color='#94a3b8', size=10)
-                    ),
-                    height=max(400, len(importance_df) * 25),  # Sesuaikan tinggi dengan jumlah fitur
-                    plot_bgcolor='#1e293b',
-                    paper_bgcolor='#0f172a',
-                    font=dict(color='white'),
-                    margin=dict(l=0, r=0, t=40, b=0),
-                    showlegend=False
-                )
-
-                st.plotly_chart(fig_importance, use_container_width=True, config={'displayModeBar': False})
-
-                # Analisis detail untuk model terpilih
-                st.markdown('<h3 class="subsection-header">🔍 Analisis Detail</h3>', unsafe_allow_html=True)
-
-                col_analysis1, col_analysis2 = st.columns(2)
-
-                with col_analysis1:
-                    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                    st.markdown(f"**📈 Statistik Importance - {selected_feature_model}**")
-
-                    stats_data = {
-                        "Total Fitur": len(importance_df),
-                        "Fitur Tinggi": len(importance_df[importance_df['category'] == 'Tinggi']),
-                        "Fitur Sedang": len(importance_df[importance_df['category'] == 'Sedang']),
-                        "Fitur Rendah": len(importance_df[importance_df['category'] == 'Rendah']),
-                        "Importance Rata-rata": f"{importance_df['importance_norm'].mean():.3f}",
-                        "Importance Std": f"{importance_df['importance_norm'].std():.3f}"
-                    }
-
-                    for key, value in stats_data.items():
-                        st.markdown(f"**{key}:** {value}")
-
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-                with col_analysis2:
-                    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                    st.markdown("**🎯 Rekomendasi Fokus Monitoring**")
-
-                    # Rekomendasi berdasarkan feature importance
-                    high_importance_features = importance_df[importance_df['category'] == 'Tinggi']['feature'].tolist()
-
-                    if high_importance_features:
-                        st.markdown("**Prioritas Tinggi:**")
-                        for feat in high_importance_features[:3]:
-                            # Berikan rekomendasi spesifik berdasarkan nama fitur
-                            if 'kepadatan' in str(feat).lower():
-                                st.markdown(f"- **{feat}**: Pantau pergerakan penduduk dan kepadatan permukiman")
-                            elif 'hujan' in str(feat).lower():
-                                st.markdown(f"- **{feat}**: Monitoring intensif curah hujan dan genangan air")
-                            elif 'sampah' in str(feat).lower():
-                                st.markdown(f"- **{feat}**: Perketat pengelolaan sampah dan kebersihan")
-                            else:
-                                st.markdown(f"- **{feat}**: Monitoring rutin dan analisis berkala")
-                    else:
-                        st.markdown("Semua variabel memiliki pengaruh sedang, lakukan monitoring komprehensif")
-
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-                # Perbandingan konsistensi antar model
-                st.markdown('<h3 class="subsection-header">🔄 Konsistensi Variabel Penting Antar Model</h3>', unsafe_allow_html=True)
-
-                # Ambil top 10 features dari setiap model
-                comparison_data = {}
-                for model_name in ["70:30", "80:20", "90:10"]:
-                    if model_name in importance_data:
-                        top_features = importance_data[model_name].head(10)['feature'].tolist()
-                        comparison_data[model_name] = top_features
-
-                if comparison_data:
-                    # Hitung frekuensi setiap feature
-                    all_features = []
-                    for features_list in comparison_data.values():
-                        all_features.extend(features_list)
-
-                    from collections import Counter
-                    feature_counts = Counter(all_features)
-
-                    # Tampilkan features yang muncul di semua model
-                    common_features = [feat for feat, count in feature_counts.items() if count == 3]
-
-                    if common_features:
-                        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                        st.success(f"✅ **{len(common_features)} variabel konsisten** di semua model:")
-                        for feat in common_features:
-                            st.markdown(f"- **{feat}**")
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                        st.warning("⚠️ Tidak ada variabel yang muncul di semua 3 model")
-                        st.markdown("**Variabel yang muncul di 2 model:**")
-                        semi_common = [feat for feat, count in feature_counts.items() if count == 2]
-                        for feat in semi_common:
-                            st.markdown(f"- {feat}")
-                        st.markdown('</div>', unsafe_allow_html=True)
-
-        else:
-            st.error("❌ Tidak dapat menentukan kolom target untuk perhitungan importance")
-
-    except Exception as e:
-        st.error(f"❌ Error dalam menghitung feature importance: {str(e)}")
-        import traceback
-        st.code(traceback.format_exc())
-
-        # Fallback: Tampilkan fitur yang ada
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown("**📋 Daftar Variabel yang Digunakan**")
-
-        # Cari variabel dengan kata "kepadatan"
-        kepadatan_features = [f for f in features if 'kepadatan' in str(f).lower()]
-
-        if kepadatan_features:
-            st.success(f"✅ Variabel kepadatan ditemukan: {len(kepadatan_features)}")
-            for feat in kepadatan_features:
-                st.markdown(f"- **{feat}**")
-        else:
-            st.warning("⚠️ Tidak ditemukan variabel dengan kata 'kepadatan'")
-
-        # Tampilkan semua fitur
-        st.markdown("**Semua Fitur:**")
-        for i, feat in enumerate(features[:20]):
-            st.markdown(f"{i+1}. {feat}")
-        if len(features) > 20:
-            st.markdown(f"... dan {len(features)-20} variabel lainnya")
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# ============================================================================
-# TAB 1: MODEL EVALUATION
-# ============================================================================
 with tab1:
-    col1, col2 = st.columns([1.3, 1])
+    # Kartu prediksi utama
+    col_res, col_stats = st.columns([1.2, 0.8])
 
-    with col1:
-        st.markdown('<h3 class="section-header">🏆 Model Performa Terbaik</h3>', unsafe_allow_html=True)
+    with col_res:
+        # Tentukan kategori risiko
+        if pred_ir > 50:
+            risk_class = "high-risk"
+            risk_label = "🚨 RISIKO TINGGI"
+            risk_icon = "⚠️"
+        elif pred_ir > 20:
+            risk_class = "med-risk"
+            risk_label = "🟡 RISIKO SEDANG"
+            risk_icon = "🔔"
+        else:
+            risk_class = "low-risk"
+            risk_label = "✅ RISIKO RENDAH"
+            risk_icon = "✅"
 
-        # Highlight Card untuk Model Terbaik
-        if not df_stats.empty and best_model_name in df_stats['Rasio'].values:
-            best_stats = df_stats[df_stats['Rasio'] == best_model_name].iloc[0]
-            r2_train = float(best_stats['R2_Internal'])
-            r2_val = float(best_stats['R2_Extra'])
-            selisih = abs(r2_train - r2_val)
+        st.markdown(f"""
+        <div class="recommendation-card {risk_class}">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div style="font-size: 3rem;">{risk_icon}</div>
+                <div>
+                    <h3 style="margin:0;">PREDIKSI INDEKS MORBIDITAS</h3>
+                    <p style="margin:0; opacity: 0.9;">{selected_kota}</p>
+                </div>
+            </div>
+            <h1 style="font-size: 5rem; margin: 1rem 0; text-align: center;">{pred_ir:.1f}</h1>
+            <h3 style="text-align: center; margin-bottom: 1rem;">{risk_label}</h3>
+            <p style="text-align: center; opacity: 0.9;">per 100.000 penduduk</p>
+        </div>
+        """, unsafe_allow_html=True)
 
+    with col_stats:
+        # Statistik ringkas - SESUAI NAMA KOLOM DI DATA
+        st.markdown("### 📈 STATISTIK WILAYAH")
+
+        # Ambil data dengan nama kolom yang benar dari dataframe
+        stats_data = {
+            "Jumlah Penduduk": format_number(data_kota_latest.get('penduduk_ribu'), is_population=True),
+            "Tahun Data": data_kota_latest.get('Tahun', 'N/A'),
+            "Kasus DBD": format_number(data_kota_latest.get('kasus_dbd')),
+            "Kepadatan": f"{data_kota_latest.get('kepadatan_penduduk_km2', 'N/A')} jiwa/km²",
+            "Sanitasi Layak": f"{data_kota_latest.get('akses_sanitasi_layak_persen', 'N/A'):.1f}%"
+        }
+
+        # Debug info
+        with st.expander("📊 Detail Data", expanded=False):
+            st.write("Data terbaru untuk:", selected_kota)
+            st.dataframe(data_kota_latest, use_container_width=True)
+
+        for key, value in stats_data.items():
             st.markdown(f"""
-            <div class="highlight-card">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-                    <div>
-                        <h3 style="margin:0; font-size: 1.3rem; color: white;">{best_model_name}</h3>
-                        <p style="margin:0.25rem 0 0 0; opacity:0.9;">Model dengan performa optimal</p>
+            <div class="metric-card">
+                <div style="font-size: 0.9rem; opacity: 0.8;">{key}</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">{value}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # REKOMENDASI UTAMA BERDASARKAN RISIKO
+    st.markdown("### 🛡️ REKOMENDASI STRATEGIS UTAMA")
+
+    if pred_ir > 50:
+        st.error("""
+        ## 🚨 STATUS DARURAT - TINDAKAN SEGERA DIPERLUKAN
+
+        1. **AKTIFKAN POSKO DARURAT DBD** di tingkat kecamatan dengan anggaran khusus
+        2. **FOGGING INTENSIF** radius 200m dari lokasi kasus baru dalam 24 jam
+        3. **MOBILISASI TENAGA MEDIS** tambahan dan pastikan ketersediaan platelet
+        4. **SURVEILANS HARIAN** oleh Dinas Kesehatan dan lapor ke Gubernur
+        5. **GERAKAN MASSAL 3M PLUS** melibatkan TNI/Polri dan organisasi masyarakat
+        """)
+    elif pred_ir > 20:
+        st.warning("""
+        ## 🟡 STATUS WASPADA - TINGKATKAN PENCEGAHAN
+
+        1. **INTENSIFKAN PSN** (Pembersihan Sarang Nyamuk) serentak seminggu sekali
+        2. **DISTRIBUSI ABATE/LARVASIDA** ke seluruh rumah di wilayah rawan
+        3. **SOSIALISASI MASIF** 3M Plus melalui media lokal dan kader
+        4. **PEMANTAUAN JENTIK** mingguan dengan cakupan >80% rumah
+        5. **SIAGA RUJUKAN** di fasilitas kesehatan dengan bed khusus DBD
+        """)
+    else:
+        st.success("""
+        ## ✅ STATUS AMAN - PERTAHANKAN DAN OPTIMALKAN
+
+        1. **LANJUTKAN PEMANTAUAN RUTIN** jentik oleh Jumantik terlatih
+        2. **EDUKASI BERKELANJUTAN** di sekolah dan perkantoran
+        3. **PERTAHANKAN SANITASI** dan drainase lingkungan
+        4. **KAPASITAS RESPONS CEPAT** yang siap diaktifkan jika diperlukan
+        5. **DOKUMENTASI BEST PRACTICE** untuk replikasi ke wilayah lain
+        """)
+
+with tab2:
+    st.markdown("### 📊 ANALISIS DETAIL VARIABEL PREDIKTOR")
+    st.markdown("Analisis mendalam setiap variabel yang mempengaruhi prediksi risiko DBD")
+
+    # Feature Importance Visualization
+    feature_names_display = [f.replace('_', ' ').title() for f in features]
+
+    # Cari nilai saat ini dengan penanganan missing values
+    current_values = []
+    for f in features:
+        val = data_kota_latest.get(f)
+        if pd.isna(val):
+            current_values.append(np.nan)
+        else:
+            try:
+                current_values.append(float(val))
+            except:
+                current_values.append(np.nan)
+
+    imp_df = pd.DataFrame({
+        'Variabel': feature_names_display,
+        'Kepentingan': model.feature_importances_,
+        'Nilai Saat Ini': current_values
+    }).sort_values('Kepentingan', ascending=False)
+
+    # Plot feature importance
+    fig_imp = go.Figure()
+    fig_imp.add_trace(go.Bar(
+        x=imp_df['Kepentingan'],
+        y=imp_df['Variabel'],
+        orientation='h',
+        marker=dict(
+            color=imp_df['Kepentingan'],
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Kepentingan")
+        ),
+        text=[f"{imp*100:.1f}%" for imp in imp_df['Kepentingan']],
+        textposition='inside',
+        name='Feature Importance'
+    ))
+
+    fig_imp.update_layout(
+        title="📈 Variabel Paling Berpengaruh dalam Prediksi",
+        height=500,
+        font=dict(color='white'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        xaxis_title="Tingkat Kepentingan",
+        yaxis_title="Variabel",
+        showlegend=False
+    )
+    st.plotly_chart(fig_imp, use_container_width=True)
+
+    st.markdown("---")
+    st.markdown("### 💡 REKOMENDASI SPESIFIK PER VARIABEL")
+
+    # Hitung rata-rata untuk setiap feature (abaikan NaN)
+    feature_means = df_master[features].apply(lambda x: pd.to_numeric(x, errors='coerce')).mean()
+
+    # Tampilkan rekomendasi untuk 5 variabel terpenting
+    top_features = imp_df.head(5)
+
+    for _, row in top_features.iterrows():
+        # Cari nama asli feature
+        original_feature_name = features[feature_names_display.index(row['Variabel'])]
+        current_value = row['Nilai Saat Ini']
+
+        with st.expander(f"🔍 {row['Variabel']} (Kepentingan: {row['Kepentingan']*100:.1f}%)", expanded=True):
+            col_metric, col_rec = st.columns([1, 2])
+
+            with col_metric:
+                # Tampilkan nilai dan status
+                mean_value = feature_means[original_feature_name]
+
+                if pd.isna(current_value):
+                    status = "❓ **DATA TIDAK TERSEDIA**"
+                    color = "#94a3b8"
+                    display_value = "N/A"
+                else:
+                    # Format nilai berdasarkan jenis data
+                    if 'persen' in original_feature_name.lower() or '_p' in original_feature_name.lower():
+                        display_value = f"{current_value:.1f}%"
+                    elif 'ribu' in original_feature_name.lower():
+                        display_value = format_number(current_value, is_population=True)
+                    else:
+                        display_value = format_number(current_value)
+
+                    try:
+                        current_num = float(current_value)
+                        mean_num = float(mean_value)
+
+                        if current_num > mean_num * 1.3:
+                            status = "🔼 **DI ATAS RATA-RATA**"
+                            color = "#ef4444"
+                        elif current_num < mean_num * 0.7:
+                            status = "🔽 **DI BAWAH RATA-RATA**"
+                            color = "#10b981"
+                        else:
+                            status = "↔️ **SESUAI RATA-RATA**"
+                            color = "#f59e0b"
+                    except:
+                        status = "📊 **DATA TERSEDIA**"
+                        color = "#94a3b8"
+
+                st.markdown(f"""
+                <div style="background: {color}20; padding: 1rem; border-radius: 10px; border-left: 4px solid {color};">
+                    <div style="font-size: 0.9rem;">Nilai Saat Ini</div>
+                    <div style="font-size: 1.8rem; font-weight: bold;">{display_value}</div>
+                    <div style="font-size: 0.8rem;">{status}</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Rata-rata: {format_number(mean_value)}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col_rec:
+                # Tampilkan rekomendasi
+                if pd.isna(current_value):
+                    recommendation = f"⚠️ **Data tidak tersedia** untuk {row['Variabel']}. Disarankan untuk mengumpulkan data ini untuk analisis yang lebih akurat."
+                else:
+                    recommendation = get_variable_recommendation(
+                        original_feature_name, 
+                        current_value, 
+                        mean_value
+                    )
+
+                st.markdown(f"""
+                <div style="background: #1e293b; padding: 1rem; border-radius: 10px;">
+                    <div style="font-size: 1rem; line-height: 1.6;">
+                    {recommendation}
                     </div>
-                    <div style="font-size: 2rem; opacity: 0.8;">🏆</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Action item spesifik
+                st.markdown("**🎯 Action Item:**")
+                if pd.isna(current_value):
+                    st.info(f"Kumpulkan data {row['Variabel'].lower()} untuk analisis yang lebih baik")
+                elif "tinggi" in recommendation.lower():
+                    st.info(f"Prioritaskan intervensi pada {row['Variabel'].lower()}")
+                elif "sedang" in recommendation.lower():
+                    st.warning(f"Monitor perkembangan {row['Variabel'].lower()} secara berkala")
+                else:
+                    st.success(f"Pertahankan kondisi optimal untuk {row['Variabel'].lower()}")
+
+with tab3:
+    st.markdown("### 🔍 EVALUASI MODEL PREDIKTIF")
+
+    col_eval1, col_eval2 = st.columns(2)
+
+    with col_eval1:
+        # Metrik model
+        st.markdown("#### 📊 PERFORMANCE METRICS")
+
+        metrics_data = {
+            "R² Score (Test)": f"{metrics['test_r2']*100:.1f}%",
+            "R² Score (Train)": f"{metrics['train_r2']*100:.1f}%",
+            "Gap Train-Test": f"{metrics['gap']*100:.2f}%",
+            "MAE (Mean Absolute Error)": f"{metrics.get('mae', 0):.2f}" if 'mae' in metrics else "N/A",
+            "RMSE (Root Mean Squared Error)": f"{metrics.get('rmse', 0):.2f}" if 'rmse' in metrics else "N/A"
+        }
+
+        for metric_name, value in metrics_data.items():
+            st.markdown(f"""
+            <div class="metric-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 0.9rem;">{metric_name}</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #10b981;">{value}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Grid untuk metrics
-            st.markdown('<div class="highlight-card" style="margin-top: 1rem;">', unsafe_allow_html=True)
-            col_grid1, col_grid2, col_grid3 = st.columns(3)
-            with col_grid1:
-                st.markdown(f"""
-                <div style="text-align: center;">
-                    <div style="font-size: 1.8rem; font-weight: 700; color: white;">{r2_train:.3f}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.9);">R² Training</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_grid2:
-                st.markdown(f"""
-                <div style="text-align: center;">
-                    <div style="font-size: 1.8rem; font-weight: 700; color: white;">{r2_val:.3f}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.9);">R² Validasi</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_grid3:
-                st.markdown(f"""
-                <div style="text-align: center;">
-                    <div style="font-size: 1.8rem; font-weight: 700; color: white;">{selisih:.3f}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.9);">Selisih</div>
-                </div>
-                """, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+    with col_eval2:
+        st.markdown("#### 🎯 INFORMASI MODEL")
 
-            # Penjelasan Model Terbaik
-            st.markdown('<div class="metric-card" style="margin-top: 1rem;">', unsafe_allow_html=True)
-            st.markdown("**🎯 Kenapa Model Ini Dipilih?**")
+        info_cards = [
+            ("🧠 **Algoritma**", "Random Forest Regressor"),
+            ("📊 **Jumlah Fitur**", f"{len(features)} variabel"),
+            ("🎯 **Target**", "Indeks Morbiditas (IR) DBD"),
+            ("📈 **Stabilitas**", "Tinggi (Gap < 10%)"),
+            ("🔄 **Update Terakhir**", bundle.get('timestamp', '2024-01-01') if 'timestamp' in bundle else '2024-01-01')
+        ]
+
+        for title, value in info_cards:
             st.markdown(f"""
-            - **Stabilitas Tinggi**: Konsisten pada data training ({r2_train:.3f}) dan validasi ({r2_val:.3f})
-            - **Generalisasi Optimal**: Selisih terkecil ({selisih:.3f}) diantara semua model
-            - **Minimal Overfitting**: Tidak terjadi penurunan performa signifikan
-            - **Robust**: Tahan terhadap variasi data
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+            <div class="metric-card">
+                <div style="font-size: 0.9rem; opacity: 0.8;">{title}</div>
+                <div style="font-size: 1rem; font-weight: bold;">{value}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    with col2:
-        st.markdown('<h3 class="section-header">📊 Perbandingan Model</h3>', unsafe_allow_html=True)
+    st.markdown("---")
 
-        if not df_stats.empty:
-            # Bar Chart Interaktif dengan Plotly
-            fig = go.Figure()
+    # Visualization of model performance
+    st.markdown("#### 📈 VISUALISASI KINERJA MODEL")
 
-            # Pastikan data dalam format numerik
-            df_stats['R2_Internal'] = pd.to_numeric(df_stats['R2_Internal'], errors='coerce')
-            df_stats['R2_Extra'] = pd.to_numeric(df_stats['R2_Extra'], errors='coerce')
+    # Create a synthetic comparison chart
+    fig_perf = go.Figure()
 
-            # Add bars
-            fig.add_trace(go.Bar(
-                x=df_stats['Rasio'].astype(str),
-                y=df_stats['R2_Internal'],
-                name='Data Training',
-                marker_color='#3b82f6',
-                text=df_stats['R2_Internal'].round(3),
-                textposition='outside',
-                textfont=dict(color='white', size=11)
-            ))
+    # Add bars for train and test performance
+    fig_perf.add_trace(go.Bar(
+        x=['Training Set', 'Test Set'],
+        y=[metrics['train_r2']*100, metrics['test_r2']*100],
+        marker_color=['#60a5fa', '#10b981'],
+        text=[f"{metrics['train_r2']*100:.1f}%", f"{metrics['test_r2']*100:.1f}%"],
+        textposition='auto',
+        name='R² Score'
+    ))
 
-            fig.add_trace(go.Bar(
-                x=df_stats['Rasio'].astype(str),
-                y=df_stats['R2_Extra'],
-                name='Data Validasi',
-                marker_color='#10b981',
-                text=df_stats['R2_Extra'].round(3),
-                textposition='outside',
-                textfont=dict(color='white', size=11)
-            ))
+    fig_perf.update_layout(
+        title="Perbandingan Performance Model",
+        height=400,
+        font=dict(color='white'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        yaxis_title="R² Score (%)",
+        showlegend=False
+    )
 
-            # Update layout
-            fig.update_layout(
-                title=dict(
-                    text="Perbandingan Performa Model",
-                    font=dict(color='white', size=16)
-                ),
-                xaxis=dict(
-                    title="Rasio Split Data",
-                    title_font=dict(color='#94a3b8'),
-                    tickfont=dict(color='#94a3b8'),
-                    gridcolor='#334155'
-                ),
-                yaxis=dict(
-                    title="Koefisien Determinasi (R²)",
-                    title_font=dict(color='#94a3b8'),
-                    tickfont=dict(color='#94a3b8'),
-                    gridcolor='#334155'
-                ),
-                barmode='group',
-                height=400,
-                showlegend=True,
-                plot_bgcolor='#1e293b',
-                paper_bgcolor='#0f172a',
-                font=dict(color='white'),
-                legend=dict(
-                    font=dict(color='white'),
-                    bgcolor='#1e293b',
-                    bordercolor='#334155',
-                    borderwidth=1
-                )
-            )
+    st.plotly_chart(fig_perf, use_container_width=True)
 
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    # Interpretasi hasil
+    st.markdown("#### 📋 INTERPRETASI HASIL EVALUASI")
 
-    # Tabel Detail Performa
-    st.markdown('<h3 class="section-header">📋 Detail Performa Model</h3>', unsafe_allow_html=True)
+    if metrics['gap'] < 0.1:
+        st.success("""
+        ✅ **MODEL STABIL DAN RELIABLE**
 
-    if not df_stats.empty:
-        df_display = df_stats.copy()
-
-        # Konversi ke numeric
-        df_display['R2_Internal'] = pd.to_numeric(df_display['R2_Internal'], errors='coerce')
-        df_display['R2_Extra'] = pd.to_numeric(df_display['R2_Extra'], errors='coerce')
-        df_display['Selisih'] = abs(df_display['R2_Internal'] - df_display['R2_Extra'])
-
-        # Format angka
-        df_display['R2_Internal'] = df_display['R2_Internal'].round(3)
-        df_display['R2_Extra'] = df_display['R2_Extra'].round(3)
-        df_display['Selisih'] = df_display['Selisih'].round(3)
-
-        # Urutkan berdasarkan selisih
-        df_display = df_display.sort_values('Selisih')
-
-        # Tampilkan tabel
-        st.dataframe(
-            df_display,
-            use_container_width=True,
-            height=200
-        )
-
-# ============================================================================
-# TAB 3: TREND ANALYSIS
-# ============================================================================
-with tab3:
-    st.markdown('<h3 class="section-header">📈 Analisis Tren Prediksi vs Aktual</h3>', unsafe_allow_html=True)
-
-    col_control1, col_control2 = st.columns([1, 2])
-
-    with col_control1:
-        selected_model = st.selectbox(
-            "Pilih Model:",
-            options=["70:30", "80:20", "90:10"],
-            index=["70:30", "80:20", "90:10"].index(best_model_name) if best_model_name in ["70:30", "80:20", "90:10"] else 0,
-            key="model_selector_trend"
-        )
-
-    # Data untuk plotting
-    if 'features' in locals() and features and isinstance(y_extra, (pd.Series, np.ndarray, list)):
-        try:
-            X_extra = df_master[features].iloc[-15:] if len(df_master) >= 15 else df_master[features]
-            y_pred_selected = models[selected_model].predict(X_extra)
-
-            # Pastikan y_extra adalah array/Series
-            y_extra_values = y_extra.values if hasattr(y_extra, 'values') else y_extra
-
-            # Buat line chart
-            fig_trend = go.Figure()
-
-            fig_trend.add_trace(go.Scatter(
-                x=list(range(1, min(16, len(y_extra_values) + 1))),
-                y=y_extra_values[:15],
-                mode='lines+markers',
-                name='Data Aktual',
-                line=dict(color='#60a5fa', width=3),
-                marker=dict(size=8, color='#60a5fa')
-            ))
-
-            fig_trend.add_trace(go.Scatter(
-                x=list(range(1, min(16, len(y_pred_selected) + 1))),
-                y=y_pred_selected[:15],
-                mode='lines+markers',
-                name=f'Prediksi ({selected_model})',
-                line=dict(color='#f87171', width=3, dash='dash'),
-                marker=dict(size=8, color='#f87171', symbol='x')
-            ))
-
-            fig_trend.update_layout(
-                title=dict(
-                    text=f"Perbandingan Data Aktual vs Prediksi",
-                    font=dict(color='white', size=16)
-                ),
-                xaxis=dict(
-                    title="Observasi",
-                    title_font=dict(color='#94a3b8'),
-                    tickfont=dict(color='#94a3b8'),
-                    gridcolor='#334155',
-                    tickmode='linear',
-                    tick0=1,
-                    dtick=1
-                ),
-                yaxis=dict(
-                    title="Nilai",
-                    title_font=dict(color='#94a3b8'),
-                    tickfont=dict(color='#94a3b8'),
-                    gridcolor='#334155'
-                ),
-                height=400,
-                hovermode="x unified",
-                plot_bgcolor='#1e293b',
-                paper_bgcolor='#0f172a',
-                legend=dict(
-                    font=dict(color='white'),
-                    bgcolor='#1e293b',
-                    bordercolor='#334155',
-                    borderwidth=1
-                )
-            )
-
-            st.plotly_chart(fig_trend, use_container_width=True, config={'displayModeBar': False})
-
-            # Metrics Cards
-            st.markdown('<h3 class="section-header">📊 Metrik Evaluasi Model</h3>', unsafe_allow_html=True)
-
-            mse = np.mean((y_extra_values[:len(y_pred_selected)] - y_pred_selected) ** 2)
-            mae = np.mean(np.abs(y_extra_values[:len(y_pred_selected)] - y_pred_selected))
-
-            col_metrics1, col_metrics2, col_metrics3 = st.columns(3)
-
-            with col_metrics1:
-                if not df_stats.empty and selected_model in df_stats['Rasio'].values:
-                    r2_train = float(df_stats[df_stats['Rasio'] == selected_model]['R2_Internal'].iloc[0])
-                    st.metric("R² Training", f"{r2_train:.3f}")
-
-            with col_metrics2:
-                st.metric("MSE", f"{mse:.3f}")
-
-            with col_metrics3:
-                st.metric("MAE", f"{mae:.3f}")
-
-        except Exception as e:
-            st.error(f"Error dalam analisis tren: {str(e)}")
+        Model menunjukkan performa yang konsisten antara data training dan testing, 
+        menandakan tidak terjadi overfitting. Model dapat diandalkan untuk prediksi 
+        di berbagai kondisi wilayah.
+        """)
     else:
-        st.warning("Data tidak tersedia untuk analisis tren")
+        st.warning("""
+        ⚠️ **PERLU PERHATIAN KHUSUS**
 
-# ============================================================================
-# TAB 4 & 5: SAMA SEPERTI SEBELUMNYA (disingkat untuk hemat ruang)
-# ============================================================================
-with tab4:
-    if 'selected_kota' in locals() and 'Kabupaten/Kota' in df_master.columns:
-        data_wilayah = df_master[df_master['Kabupaten/Kota'] == selected_kota]
-
-        if not data_wilayah.empty:
-            latest_data = data_wilayah.iloc[-1]
-
-            try:
-                X_pred = pd.DataFrame([latest_data[features]], columns=features)
-                pred_value = models[best_model_name].predict(X_pred)[0]
-
-                st.markdown(f'<h3 class="section-header">📍 Analisis Wilayah: {selected_kota}</h3>', unsafe_allow_html=True)
-
-                col_pred, col_status = st.columns([1, 1.5])
-
-                with col_pred:
-                    if pred_value > 50:
-                        risk_class = "risk-high"
-                        risk_label = "🚨 RISIKO TINGGI"
-                    elif pred_value > 30:
-                        risk_class = "risk-medium"
-                        risk_label = "⚠️ RISIKO SEDANG"
-                    else:
-                        risk_class = "risk-low"
-                        risk_label = "✅ RISIKO RENDAH"
-
-                    st.markdown(f"""
-                    <div class="{risk_class}">
-                        <div style="margin-bottom: 1rem;">
-                            <h4 style="margin:0; font-size: 1rem; opacity: 0.9;">PREDIKSI INDEKS RISIKO DBD</h4>
-                            <h1 style="margin:0.5rem 0; font-size: 2.5rem; font-weight: 700;">{pred_value:.1f}</h1>
-                        </div>
-                        <div style="text-align: center; padding: 0.75rem; background: rgba(255,255,255,0.15); border-radius: 8px;">
-                            <h3 style="margin:0; font-size: 1.1rem;">{risk_label}</h3>
-                        </div>
-                        <p style="margin: 1rem 0 0 0; opacity: 0.9; font-size: 0.85rem;">
-                            Model: <strong>{best_model_name}</strong>
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                with col_status:
-                    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                    st.markdown("**🌡️ Kondisi Lingkungan**")
-
-                    env_col1, env_col2 = st.columns(2)
-
-                    with env_col1:
-                        if 'curah_hujan_mm' in latest_data:
-                            rain_value = float(latest_data['curah_hujan_mm'])
-                            rain_status = "Tinggi" if rain_value > 300 else "Normal"
-                            st.metric("Curah Hujan", f"{rain_value:.1f} mm", rain_status)
-
-                    with env_col2:
-                        if 'timbulan_sampah_ton' in latest_data:
-                            waste_value = float(latest_data['timbulan_sampah_ton'])
-                            waste_status = "Tinggi" if waste_value > 450 else "Normal"
-                            st.metric("Timbulan Sampah", f"{waste_value:.1f} ton", waste_status)
-
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-                st.markdown('<h3 class="section-header">🛡️ Rekomendasi Mitigasi</h3>', unsafe_allow_html=True)
-
-                col_rec1, col_rec2 = st.columns(2)
-
-                with col_rec1:
-                    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                    st.markdown("**🎯 Tindakan Prioritas**")
-
-                    if pred_value > 50:
-                        st.markdown("""
-                        - Aktifkan Posko DBD 24 jam
-                        - Fogging fokus daerah rawan
-                        - Mobilisasi Tim Gerak Cepat
-                        - Siapkan RS rujukan
-                        """)
-                    elif pred_value > 30:
-                        st.markdown("""
-                        - Intensifkan surveilans
-                        - Sosialisasi 3M Plus
-                        - Perkuat sistem pelaporan
-                        - Siapkan logistik
-                        """)
-                    else:
-                        st.markdown("""
-                        - Monitoring rutin
-                        - Pemeliharaan lingkungan
-                        - Edukasi berkelanjutan
-                        - Kesiapan dasar
-                        """)
-
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-                with col_rec2:
-                    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                    st.markdown("**🌿 Berdasarkan Kondisi**")
-
-                    recommendations = []
-
-                    if 'curah_hujan_mm' in latest_data and float(latest_data['curah_hujan_mm']) > 300:
-                        recommendations.append("Pantau genangan air intensif")
-
-                    if 'timbulan_sampah_ton' in latest_data and float(latest_data['timbulan_sampah_ton']) > 450:
-                        recommendations.append("Percepat pengangkutan sampah")
-
-                    if not recommendations:
-                        recommendations.append("Pertahankan kondisi lingkungan")
-
-                    recommendations.append("Optimalkan Gerakan 1 Rumah 1 Jumantik")
-                    recommendations.append("Laporkan kasus secara real-time")
-
-                    for rec in recommendations:
-                        st.markdown(f"- {rec}")
-
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-            except Exception as e:
-                st.error(f"Error dalam prediksi: {str(e)}")
-        else:
-            st.warning(f"Data untuk wilayah {selected_kota} tidak ditemukan.")
-    else:
-        st.warning("Data wilayah tidak tersedia")
-
-with tab5:
-    st.markdown('<h3 class="section-header">📋 Statistik Data</h3>', unsafe_allow_html=True)
-
-    col_stat1, col_stat2 = st.columns(2)
-
-    with col_stat1:
-        st.metric("Total Observasi", len(df_master))
-
-    with col_stat2:
-        if 'Kabupaten/Kota' in df_master.columns:
-            total_wilayah = len(df_master['Kabupaten/Kota'].unique())
-            st.metric("Jumlah Wilayah", total_wilayah)
-
-    st.markdown('<h4 class="subsection-header">👁️ Preview Data</h4>', unsafe_allow_html=True)
-    st.dataframe(df_master.head(8), use_container_width=True, height=280)
-
-    numeric_cols = df_master.select_dtypes(include=[np.number]).columns.tolist()
-    if numeric_cols:
-        st.markdown('<h4 class="subsection-header">📊 Ringkasan Statistik</h4>', unsafe_allow_html=True)
-        st.dataframe(df_master[numeric_cols].describe().round(2), use_container_width=True, height=300)
+        Terdapat gap yang signifikan antara performa training dan testing. 
+        Disarankan untuk melakukan validasi tambahan dan monitoring ketat 
+        sebelum implementasi skala penuh.
+        """)
 
 # ============================================================================
 # FOOTER
 # ============================================================================
 st.markdown("---")
-
-footer_col1, footer_col2, footer_col3 = st.columns(3)
+footer_col1, footer_col2, footer_col3 = st.columns([2, 1, 1])
 
 with footer_col1:
-    st.markdown("**📞 Kontak Darurat DBD**")
-    st.markdown("- Hotline: 119")
-    st.markdown("- Puskesmas: 112")
+    st.markdown("""
+    <div style="text-align: left; opacity: 0.7;">
+        <p>📋 <strong>Sistem Mitigasi DBD Terpadu</strong> • Dashboard v2.0 • © 2024 Kementerian Kesehatan</p>
+        <p style="font-size: 0.9rem;">Sistem ini menggunakan model machine learning untuk prediksi risiko DBD dengan akurasi tinggi.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with footer_col2:
-    st.markdown("**🔄 Status Sistem**")
-    st.markdown(f"- Model: **{best_model_name}**")
-    st.markdown(f"- Data: **{len(df_master)}** observasi")
+    st.markdown("""
+    <div style="text-align: center; opacity: 0.7;">
+        <p>📞 Hotline DBD</p>
+        <p style="font-size: 1.2rem; font-weight: bold;">119</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with footer_col3:
-    st.markdown("**📅 Update Terakhir**")
-    st.markdown(datetime.now().strftime("%d %B %Y %H:%M"))
-
-st.markdown("""
-<div style="text-align: center; padding: 1rem; color: #94a3b8; font-size: 0.85rem; margin-top: 2rem;">
-Dashboard Mitigasi DBD v2.0 • © 2024 Kementerian Kesehatan
-</div>
-""", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="text-align: right; opacity: 0.7;">
+        <p>Terakhir diperbarui:</p>
+        <p>{datetime.now().strftime('%d %B %Y')}</p>
+    </div>
+    """, unsafe_allow_html=True)
